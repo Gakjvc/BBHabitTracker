@@ -5,8 +5,7 @@ void main() => runApp(MyApp());
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-        theme: ThemeData(primaryColor: Colors.green), home: TaskCheckList());
+    return MaterialApp(home: TaskCheckList());
   }
 }
 
@@ -18,8 +17,28 @@ class TaskCheckList extends StatefulWidget {
 }
 
 class TaskCheckListState extends State<TaskCheckList> {
-  var num = 6;
-  var checked = false;
+  int num = 6;
+  bool editable = false;
+  bool checkeda = false;
+  List glist = <bool>[];
+
+  Widget habittools() {
+    return ListView(
+      children: [addhabit(), edithabits()],
+    );
+  }
+
+  Widget edithabits() {
+    return IconButton(
+      onPressed: () {
+        setState(() {
+          editable = !editable;
+          (context as Element).reassemble();
+        });
+      },
+      icon: Icon(Icons.edit),
+    );
+  }
 
   Widget addhabit() {
     return IconButton(
@@ -38,53 +57,43 @@ class TaskCheckListState extends State<TaskCheckList> {
       itemCount: num,
       padding: const EdgeInsets.all(8),
       itemBuilder: (BuildContext context, int index) {
-        return _buildRow();
+        return _buildRow(index);
       },
       separatorBuilder: (BuildContext context, int index) => const Divider(
           color: Colors.black, height: 20, thickness: 3, endIndent: 30),
     );
   }
 
-  Widget _buildRow() {
-    return TextField(
-        decoration: InputDecoration(
-            hintText: 'Enter a habit',
-            // delete
-            suffixIcon: IconButton(
-              icon: Icon(
-                Icons.delete,
-                color: Colors.red,
-              ),
-              onPressed: () {
-                num--;
-                (context as Element).reassemble();
-              },
-            ),
-            //check
-            icon: IconButton(
-                icon: Icon(
-                  (checked) ? Icons.check_box : Icons.check_box_outline_blank,
-                  color: Colors.black,
-                ),
-                onPressed: () {
-                  setState(() {
-                    if (checked) {
-                      checked = false;
-                    } else
-                      checked = true;
-                  });
-                  print(checked);
-                  (context as Element).reassemble();
-                })));
+  Widget _buildRow(int indx) {
+    bool checked = false;
+    glist.add(checked);
+    return CheckboxListTile(
+        activeColor: Color.fromARGB(255, 248, 17, 0),
+        controlAffinity: ListTileControlAffinity.leading,
+        title: TextField(
+          maxLines: null,
+          decoration: const InputDecoration(
+            hintText: "Enter a habit...",
+          ),
+          enabled: editable,
+        ),
+        value: glist[indx],
+        onChanged: (value) {
+          setState(() {
+            glist[indx] = value!;
+            print(glist[indx]);
+          });
+        });
   }
 
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
           backgroundColor: Colors.black,
           title: const Text('BareBones Habit Tracker')),
       body: _buildList(),
-      floatingActionButton: addhabit(),
+      floatingActionButton: edithabits(),
     );
   }
 }
