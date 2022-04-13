@@ -20,7 +20,7 @@ class TaskCheckListState extends State<TaskCheckList> {
   int num = 6;
   bool editable = false;
   bool checkeda = false;
-  List glist = <bool>[];
+  List habitscheck = <bool>[];
 
   Widget habittools() {
     return ListView(
@@ -66,7 +66,7 @@ class TaskCheckListState extends State<TaskCheckList> {
 
   Widget _buildRow(int indx) {
     bool checked = false;
-    glist.add(checked);
+    habitscheck.add(checked);
     return CheckboxListTile(
         activeColor: Color.fromARGB(255, 248, 17, 0),
         controlAffinity: ListTileControlAffinity.leading,
@@ -77,11 +77,11 @@ class TaskCheckListState extends State<TaskCheckList> {
           ),
           enabled: editable,
         ),
-        value: glist[indx],
+        value: habitscheck[indx],
         onChanged: (value) {
           setState(() {
-            glist[indx] = value!;
-            print(glist[indx]);
+            habitscheck[indx] = value!;
+            print(habitscheck[indx]);
           });
         });
   }
@@ -93,7 +93,8 @@ class TaskCheckListState extends State<TaskCheckList> {
           backgroundColor: Colors.black,
           title: const Text('BareBones Habit Tracker')),
       body: _buildList(),
-      floatingActionButton: edithabits(),
+      persistentFooterButtons:
+          editable ? [addhabit(), edithabits()] : [edithabits()],
     );
   }
 }
