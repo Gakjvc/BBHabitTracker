@@ -20,7 +20,9 @@ class TaskCheckListState extends State<TaskCheckList> {
   int num = 6;
   bool editable = false;
   bool checkeda = false;
-  List habitscheck = <bool>[];
+  List<bool> habitscheck = <bool>[];
+  var h;
+  bool t = false;
 
   Widget habittools() {
     return ListView(
@@ -33,7 +35,6 @@ class TaskCheckListState extends State<TaskCheckList> {
       onPressed: () {
         setState(() {
           editable = !editable;
-          (context as Element).reassemble();
         });
       },
       icon: Icon(Icons.edit),
@@ -45,22 +46,34 @@ class TaskCheckListState extends State<TaskCheckList> {
       onPressed: () {
         setState(() {
           num++;
-          (context as Element).reassemble();
         });
       },
-      icon: Icon(Icons.add),
+      icon: const Icon(Icons.add),
     );
   }
 
+  Widget removehabit(int index) {
+    return IconButton(
+        onPressed: () {
+          setState(() {
+            h.removeAt(index);
+            habitscheck.removeAt(index);
+            h = h;
+            t = true;
+          });
+        },
+        color: Colors.red,
+        icon: const Icon(Icons.delete));
+  }
+
   Widget _buildList() {
-    return ListView.separated(
-      itemCount: num,
+    if (t == false) {
+      h = List<Widget>.generate(num, (int index) => _buildRow(index));
+      print("VAI REMAR CONTRA A MARÉ");
+    }
+    return ListView(
+      children: h,
       padding: const EdgeInsets.all(8),
-      itemBuilder: (BuildContext context, int index) {
-        return _buildRow(index);
-      },
-      separatorBuilder: (BuildContext context, int index) => const Divider(
-          color: Colors.black, height: 20, thickness: 3, endIndent: 30),
     );
   }
 
@@ -68,7 +81,7 @@ class TaskCheckListState extends State<TaskCheckList> {
     bool checked = false;
     habitscheck.add(checked);
     return CheckboxListTile(
-        activeColor: Color.fromARGB(255, 248, 17, 0),
+        activeColor: Colors.black,
         controlAffinity: ListTileControlAffinity.leading,
         title: TextField(
           maxLines: null,
@@ -81,9 +94,9 @@ class TaskCheckListState extends State<TaskCheckList> {
         onChanged: (value) {
           setState(() {
             habitscheck[indx] = value!;
-            print(habitscheck[indx]);
           });
-        });
+        },
+        secondary: editable ? removehabit(indx) : null);
   }
 
   @override
