@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:table_calendar/table_calendar.dart';
 
 void main() => runApp(MyApp());
 
@@ -20,70 +21,107 @@ class TaskCheckListState extends State<TaskCheckList> {
   int num = 6;
   bool editable = false;
   bool checkeda = false;
-  List habitscheck = <bool>[];
+  var checkedDays = Map();
+  List<bool> habitsCheck = <bool>[];
 
-  Widget habittools() {
+  Widget habitTools() {
     return ListView(
-      children: [addhabit(), edithabits()],
+      children: [addHabit(), editHabits()],
     );
   }
 
-  Widget edithabits() {
+  Widget editHabits() {
     return IconButton(
       onPressed: () {
         setState(() {
           editable = !editable;
-          (context as Element).reassemble();
         });
       },
-      icon: Icon(Icons.edit),
+      icon: const Icon(Icons.edit),
     );
   }
 
-  Widget addhabit() {
+  Widget addHabit() {
     return IconButton(
       onPressed: () {
         setState(() {
           num++;
-          (context as Element).reassemble();
         });
       },
-      icon: Icon(Icons.add),
+      icon: const Icon(Icons.add),
     );
   }
 
+  Widget removeHabit() {
+    return IconButton(
+        onPressed: () {
+          setState(() {
+            if (num > 0) num--;
+            habitsCheck.removeLast();
+          });
+        },
+        color: Colors.red,
+        icon: const Icon(Icons.delete));
+  }
+
   Widget _buildList() {
-    return ListView.separated(
-      itemCount: num,
+    return ListView(
+      children: List<Widget>.generate(num, (int index) => _buildRow(index)),
       padding: const EdgeInsets.all(8),
-      itemBuilder: (BuildContext context, int index) {
-        return _buildRow(index);
-      },
-      separatorBuilder: (BuildContext context, int index) => const Divider(
-          color: Colors.black, height: 20, thickness: 3, endIndent: 30),
     );
   }
 
   Widget _buildRow(int indx) {
     bool checked = false;
-    habitscheck.add(checked);
+    if (habitsCheck.length < num) {
+      habitsCheck.add(checked);
+    }
     return CheckboxListTile(
-        activeColor: Color.fromARGB(255, 248, 17, 0),
+        activeColor: Colors.black,
         controlAffinity: ListTileControlAffinity.leading,
         title: TextField(
+          textInputAction: TextInputAction.done,
           maxLines: null,
           decoration: const InputDecoration(
             hintText: "Enter a habit...",
           ),
           enabled: editable,
         ),
-        value: habitscheck[indx],
+        value: habitsCheck[indx],
         onChanged: (value) {
           setState(() {
-            habitscheck[indx] = value!;
-            print(habitscheck[indx]);
+            habitsCheck[indx] = value!;
+            markDay();
           });
         });
+  }
+
+  Widget theChain() {
+    return Scaffold(
+      appBar: AppBar(
+          backgroundColor: Colors.black,
+          title: const Text('BareBones Habit Calendar')),
+      body: cal(),
+    );
+  }
+
+  Widget cal() {
+    String strDt = "20220402";
+    DateTime parseDt = DateTime.parse(strDt);
+    return TableCalendar(
+      calendarBuilders: CalendarBuilders(
+        markerBuilder: (context, day, focusedDay) {
+          if (checkedDays[day.day] == true) {
+            return const Icon(Icons.check, color: Colors.green);
+          } else {
+            return null;
+          }
+        },
+      ),
+      focusedDay: DateTime.now(),
+      firstDay: parseDt,
+      lastDay: DateTime.now(),
+    );
   }
 
   @override
@@ -94,7 +132,17 @@ class TaskCheckListState extends State<TaskCheckList> {
           title: const Text('BareBones Habit Tracker')),
       body: _buildList(),
       persistentFooterButtons:
-          editable ? [addhabit(), edithabits()] : [edithabits()],
+          editable ? [addHabit(), removeHabit(), editHabits()] : [editHabits()],
+      endDrawer: theChain(),
     );
+  }
+
+  void markDay() {
+    print(habitsCheck);
+    if (habitsCheck.contains(false) == false) {
+      checkedDays[DateTime.now().day] = true;
+    } else {
+      checkedDays[DateTime.now().day] = false;
+    }
   }
 }
