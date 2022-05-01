@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:table_calendar/table_calendar.dart';
 
 void main() => runApp(MyApp());
 
@@ -20,28 +21,27 @@ class TaskCheckListState extends State<TaskCheckList> {
   int num = 6;
   bool editable = false;
   bool checkeda = false;
-  List<bool> habitscheck = <bool>[];
-  var h;
-  bool t = false;
+  var checkedDays = Map();
+  List<bool> habitsCheck = <bool>[];
 
-  Widget habittools() {
+  Widget habitTools() {
     return ListView(
-      children: [addhabit(), edithabits()],
+      children: [addHabit(), editHabits()],
     );
   }
 
-  Widget edithabits() {
+  Widget editHabits() {
     return IconButton(
       onPressed: () {
         setState(() {
           editable = !editable;
         });
       },
-      icon: Icon(Icons.edit),
+      icon: const Icon(Icons.edit),
     );
   }
 
-  Widget addhabit() {
+  Widget addHabit() {
     return IconButton(
       onPressed: () {
         setState(() {
@@ -52,14 +52,12 @@ class TaskCheckListState extends State<TaskCheckList> {
     );
   }
 
-  Widget removehabit(int index) {
+  Widget removeHabit() {
     return IconButton(
         onPressed: () {
           setState(() {
-            h.removeAt(index);
-            habitscheck.removeAt(index);
-            h = h;
-            t = true;
+            if (num > 0) num--;
+            habitsCheck.removeLast();
           });
         },
         color: Colors.red,
@@ -67,36 +65,63 @@ class TaskCheckListState extends State<TaskCheckList> {
   }
 
   Widget _buildList() {
-    if (t == false) {
-      h = List<Widget>.generate(num, (int index) => _buildRow(index));
-      print("VAI REMAR CONTRA A MARÉ");
-    }
     return ListView(
-      children: h,
+      children: List<Widget>.generate(num, (int index) => _buildRow(index)),
       padding: const EdgeInsets.all(8),
     );
   }
 
   Widget _buildRow(int indx) {
     bool checked = false;
-    habitscheck.add(checked);
+    if (habitsCheck.length < num) {
+      habitsCheck.add(checked);
+    }
     return CheckboxListTile(
         activeColor: Colors.black,
         controlAffinity: ListTileControlAffinity.leading,
         title: TextField(
+          textInputAction: TextInputAction.done,
           maxLines: null,
           decoration: const InputDecoration(
             hintText: "Enter a habit...",
           ),
           enabled: editable,
         ),
-        value: habitscheck[indx],
+        value: habitsCheck[indx],
         onChanged: (value) {
           setState(() {
-            habitscheck[indx] = value!;
+            habitsCheck[indx] = value!;
+            markDay();
           });
+        });
+  }
+
+  Widget theChain() {
+    return Scaffold(
+      appBar: AppBar(
+          backgroundColor: Colors.black,
+          title: const Text('BareBones Habit Calendar')),
+      body: cal(),
+    );
+  }
+
+  Widget cal() {
+    String strDt = "20220402";
+    DateTime parseDt = DateTime.parse(strDt);
+    return TableCalendar(
+      calendarBuilders: CalendarBuilders(
+        markerBuilder: (context, day, focusedDay) {
+          if (checkedDays[day.day] == true) {
+            return const Icon(Icons.check, color: Colors.green);
+          } else {
+            return null;
+          }
         },
-        secondary: editable ? removehabit(indx) : null);
+      ),
+      focusedDay: DateTime.now(),
+      firstDay: parseDt,
+      lastDay: DateTime.now(),
+    );
   }
 
   @override
@@ -107,7 +132,17 @@ class TaskCheckListState extends State<TaskCheckList> {
           title: const Text('BareBones Habit Tracker')),
       body: _buildList(),
       persistentFooterButtons:
-          editable ? [addhabit(), edithabits()] : [edithabits()],
+          editable ? [addHabit(), removeHabit(), editHabits()] : [editHabits()],
+      endDrawer: theChain(),
     );
+  }
+
+  void markDay() {
+    print(habitsCheck);
+    if (habitsCheck.contains(false) == false) {
+      checkedDays[DateTime.now().day] = true;
+    } else {
+      checkedDays[DateTime.now().day] = false;
+    }
   }
 }
