@@ -22,10 +22,11 @@ class TaskCheckList extends StatefulWidget {
 class TaskCheckListState extends State<TaskCheckList> {
   int num = 6;
   bool editable = false;
-  var checkedDays = Map<int, int>();
-  var habits;
-  List<String> habitSeparated = <String>[];
-  var textController = TextEditingController();
+  bool previouslyMarked = false;
+  String habits = "ç";
+  bool notFirst = false;
+  List<String> habitsSeparated = <String>[];
+  List<TextEditingController> textControllers = <TextEditingController>[];
   List<bool> habitsCheck = <bool>[];
   List<int> listHaCheck = <int>[];
   List<int> listDays = <int>[];
@@ -77,19 +78,22 @@ class TaskCheckListState extends State<TaskCheckList> {
     if (habitsCheck.length < num) {
       bool checked = false;
       habitsCheck.add(checked);
+      textControllers.add(TextEditingController());
+      habitsSeparated.add(textControllers[indx].text);
     }
 
     return CheckboxListTile(
         activeColor: Colors.black,
         controlAffinity: ListTileControlAffinity.leading,
         title: TextField(
-          controller: textController,
+          controller: textControllers[indx],
           textInputAction: TextInputAction.done,
+          onTap: () {
+            habitsSeparated[indx] = (textControllers[indx].text);
+          },
           onEditingComplete: () {
             FocusScope.of(context).unfocus();
-            habits = habits + textController.text;
-            textController.dispose();
-            textController = TextEditingController();
+            habitsSeparated[indx] = (textControllers[indx].text);
           },
           maxLines: null,
           decoration: const InputDecoration(
@@ -108,9 +112,13 @@ class TaskCheckListState extends State<TaskCheckList> {
 
   void _markDay() {
     if (habitsCheck.contains(false) == false) {
-      checkedDays[DateTime.now().day] = DateTime.now().month;
-    } else {
-      checkedDays.remove(DateTime.now().day);
+      listDays.add(DateTime.now().day);
+      listMonths.add(DateTime.now().month);
+      previouslyMarked = true;
+    } else if (previouslyMarked) {
+      listDays.removeLast();
+      listMonths.removeLast();
+      previouslyMarked = false;
     }
   }
 
@@ -129,8 +137,7 @@ class TaskCheckListState extends State<TaskCheckList> {
     return TableCalendar(
       calendarBuilders: CalendarBuilders(
         markerBuilder: (context, day, focusedDay) {
-          if (checkedDays.keys.contains(day.day) &&
-              day.month == checkedDays[day.day]) {
+          if (listDays.contains(day.day) && listMonths.contains(day.month)) {
             return const Icon(Icons.check,
                 color: Color.fromARGB(255, 4, 184, 4));
           } else {
@@ -147,23 +154,16 @@ class TaskCheckListState extends State<TaskCheckList> {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-        onTap: (() => FocusScope.of(context).unfocus()),
         child: Scaffold(
-          appBar: AppBar(
-              backgroundColor: Colors.black,
-              title: const Text('BareBones Habit Tracker')),
-          body: _buildList(),
-          persistentFooterButtons: editable
-              ? [
-                  testSave(),
-                  testRead(),
-                  addHabit(),
-                  removeHabit(),
-                  editHabits()
-                ]
-              : [editHabits()],
-          endDrawer: theChain(),
-        ));
+      appBar: AppBar(
+          backgroundColor: Colors.black,
+          title: const Text('BareBones Habit Tracker')),
+      body: _buildList(),
+      persistentFooterButtons: editable
+          ? [testSave(), testRead(), addHabit(), removeHabit(), editHabits()]
+          : [editHabits()],
+      endDrawer: theChain(),
+    ));
   }
 
   Widget testSave() {
@@ -176,14 +176,16 @@ class TaskCheckListState extends State<TaskCheckList> {
   }
 
   _read() async {
-    int i = 0;
     try {
       final directory = await getApplicationDocumentsDirectory();
       final file = File('${directory.path}/my_file.txt');
       await file.readAsBytes();
-      for (var item in listDays) {
-        checkedDays[item] = listMonths[i];
-        i++;
+      habits = await file.readAsString();
+      habitsSeparated = habits.split("|");
+      for (var item in habitsSeparated) {
+        if (item != "") {
+          textControllers[habitsSeparated.indexOf(item)].text = item;
+        }
       }
       habitsCheck.clear();
       for (var item in listHaCheck) {
@@ -200,6 +202,8 @@ class TaskCheckListState extends State<TaskCheckList> {
   }
 
   _save() async {
+    notFirst = false;
+    habits = "ç";
     listHaCheck.clear();
     for (var item in habitsCheck) {
       if (item == true) {
@@ -208,12 +212,19 @@ class TaskCheckListState extends State<TaskCheckList> {
         listHaCheck.add(0);
       }
     }
-    listMonths = List<int>.from(checkedDays.values);
-    listDays = List<int>.from(checkedDays.keys);
+    for (var item in habitsSeparated) {
+      if (habitsSeparated.indexOf(item) == 0 && !notFirst) {
+        habits = item;
+        notFirst = true;
+      } else {
+        habits = habits + "|" + item;
+      }
+    }
     final directory = await getApplicationDocumentsDirectory();
     final file = File('${directory.path}/my_file.txt');
     await file.writeAsBytes(listMonths);
     await file.writeAsBytes(listDays);
     await file.writeAsBytes(listHaCheck);
+    await file.writeAsString(habits);
   }
 }
