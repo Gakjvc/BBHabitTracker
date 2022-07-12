@@ -20,10 +20,10 @@ class TaskCheckList extends StatefulWidget {
 }
 
 class TaskCheckListState extends State<TaskCheckList> {
-  int num = 6;
+  int numOfHabits = 6;
   bool editable = false;
   bool previouslyMarked = false;
-  String habits = "ç";
+  String habits = "çç";
   bool notFirst = false;
   List<String> habitsSeparated = <String>[];
   List<TextEditingController> textControllers = <TextEditingController>[];
@@ -47,7 +47,7 @@ class TaskCheckListState extends State<TaskCheckList> {
     return IconButton(
       onPressed: () {
         setState(() {
-          num++;
+          numOfHabits++;
         });
       },
       icon: const Icon(Icons.add),
@@ -58,7 +58,7 @@ class TaskCheckListState extends State<TaskCheckList> {
     return IconButton(
         onPressed: () {
           setState(() {
-            if (num > 0) num--;
+            if (numOfHabits > 0) numOfHabits--;
             habitsCheck.removeLast();
             _markDay();
           });
@@ -69,13 +69,14 @@ class TaskCheckListState extends State<TaskCheckList> {
 
   Widget _buildList() {
     return ListView(
-      children: List<Widget>.generate(num, (int index) => _buildRow(index)),
+      children:
+          List<Widget>.generate(numOfHabits, (int index) => _buildRow(index)),
       padding: const EdgeInsets.all(8),
     );
   }
 
   Widget _buildRow(int indx) {
-    if (habitsCheck.length < num) {
+    if (habitsCheck.length < numOfHabits) {
       bool checked = false;
       habitsCheck.add(checked);
       textControllers.add(TextEditingController());
@@ -122,6 +123,8 @@ class TaskCheckListState extends State<TaskCheckList> {
     }
   }
 
+
+
   Widget theChain() {
     return Scaffold(
       appBar: AppBar(
@@ -132,7 +135,7 @@ class TaskCheckListState extends State<TaskCheckList> {
   }
 
   Widget cal() {
-    String strDt = "20220402";
+    String strDt = "20210402";
     DateTime parseDt = DateTime.parse(strDt);
     return TableCalendar(
       calendarBuilders: CalendarBuilders(
@@ -176,11 +179,17 @@ class TaskCheckListState extends State<TaskCheckList> {
   }
 
   _read() async {
+    var leitura;
     try {
       final directory = await getApplicationDocumentsDirectory();
       final file = File('${directory.path}/my_file.txt');
       await file.readAsBytes();
-      habits = await file.readAsString();
+      leitura = await file.readAsString();
+      leitura = leitura.toString().split("çç");
+      listMonths = _stringToInt(leitura[0]);
+      listDays = _stringToInt(leitura[1]);
+      listHaCheck = _stringToInt(leitura[2]);
+      habits = leitura[3];
       habitsSeparated = habits.split("|");
       for (var item in habitsSeparated) {
         if (item != "") {
@@ -203,7 +212,7 @@ class TaskCheckListState extends State<TaskCheckList> {
 
   _save() async {
     notFirst = false;
-    habits = "ç";
+    habits = "çç";
     listHaCheck.clear();
     for (var item in habitsCheck) {
       if (item == true) {
@@ -222,9 +231,20 @@ class TaskCheckListState extends State<TaskCheckList> {
     }
     final directory = await getApplicationDocumentsDirectory();
     final file = File('${directory.path}/my_file.txt');
-    await file.writeAsBytes(listMonths);
-    await file.writeAsBytes(listDays);
-    await file.writeAsBytes(listHaCheck);
-    await file.writeAsString(habits);
+    await file.writeAsString(listMonths.toString() + "çç");
+    await file.writeAsString(listDays.toString() + "çç", mode: FileMode.append);
+    await file.writeAsString(listHaCheck.toString() + "çç",
+        mode: FileMode.append);
+    await file.writeAsString(habits, mode: FileMode.append);
   }
+}
+
+List<int> _stringToInt(String string) {
+  var slimpa = string.substring(1, string.length - 1);
+  var lista = slimpa.split(",");
+  List<int> retornar = <int>[];
+  for (var element in lista) {
+    retornar.add(int.parse(element));
+  }
+  return retornar;
 }
