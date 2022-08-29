@@ -29,8 +29,9 @@ class TaskCheckListState extends State<TaskCheckList> {
   List<TextEditingController> textControllers = <TextEditingController>[];
   List<bool> habitsCheck = <bool>[];
   List<int> listHaCheck = <int>[];
-  List<int> listDays = <int>[];
-  List<int> listMonths = <int>[];
+  List<int> _days = <int>[];
+  List<int> _months = <int>[];
+  List<int> _years = <int>[];
 
   Widget editHabits() {
     return IconButton(
@@ -92,6 +93,9 @@ class TaskCheckListState extends State<TaskCheckList> {
           onTap: () {
             habitsSeparated[indx] = (textControllers[indx].text);
           },
+          onChanged: (change) {
+            habitsSeparated[indx] = change;
+          },
           onEditingComplete: () {
             FocusScope.of(context).unfocus();
             habitsSeparated[indx] = (textControllers[indx].text);
@@ -113,17 +117,26 @@ class TaskCheckListState extends State<TaskCheckList> {
 
   void _markDay() {
     if (habitsCheck.contains(false) == false) {
-      listDays.add(DateTime.now().day);
-      listMonths.add(DateTime.now().month);
+      _days.add(DateTime.now().day);
+      _months.add(DateTime.now().month);
+      _years.add(DateTime.now().year);
       previouslyMarked = true;
     } else if (previouslyMarked) {
-      listDays.removeLast();
-      listMonths.removeLast();
+      _days.removeLast();
+      _months.removeLast();
+      _years.removeLast();
       previouslyMarked = false;
     }
   }
 
-
+  void _onDayChanged() {
+    _markDay();
+    _save();
+    previouslyMarked = false;
+    for (var item in habitsCheck) {
+      item = false;
+    }
+  }
 
   Widget theChain() {
     return Scaffold(
@@ -135,12 +148,12 @@ class TaskCheckListState extends State<TaskCheckList> {
   }
 
   Widget cal() {
-    String strDt = "20210402";
-    DateTime parseDt = DateTime.parse(strDt);
     return TableCalendar(
       calendarBuilders: CalendarBuilders(
         markerBuilder: (context, day, focusedDay) {
-          if (listDays.contains(day.day) && listMonths.contains(day.month)) {
+          if (_days.contains(day.day) &&
+              _months.contains(day.month) &&
+              _years.contains(day.year)) {
             return const Icon(Icons.check,
                 color: Color.fromARGB(255, 4, 184, 4));
           } else {
@@ -149,7 +162,7 @@ class TaskCheckListState extends State<TaskCheckList> {
         },
       ),
       focusedDay: DateTime.now(),
-      firstDay: parseDt,
+      firstDay: DateTime.parse("20210402"),
       lastDay: DateTime.now(),
     );
   }
@@ -179,17 +192,17 @@ class TaskCheckListState extends State<TaskCheckList> {
   }
 
   _read() async {
-    var leitura;
+    var savedSplitData;
     try {
       final directory = await getApplicationDocumentsDirectory();
       final file = File('${directory.path}/my_file.txt');
-      await file.readAsBytes();
-      leitura = await file.readAsString();
-      leitura = leitura.toString().split("çç");
-      listMonths = _stringToInt(leitura[0]);
-      listDays = _stringToInt(leitura[1]);
-      listHaCheck = _stringToInt(leitura[2]);
-      habits = leitura[3];
+      savedSplitData = await file.readAsString().toString().split("çç");
+      _years = _stringToInt(savedSplitData[0]);
+      _months = _stringToInt(savedSplitData[1]);
+      _days = _stringToInt(savedSplitData[2]);
+      numOfHabits = int.parse(savedSplitData[3]);
+      listHaCheck = _stringToInt(savedSplitData[4]);
+      habits = savedSplitData[5];
       habitsSeparated = habits.split("|");
       for (var item in habitsSeparated) {
         if (item != "") {
@@ -202,6 +215,9 @@ class TaskCheckListState extends State<TaskCheckList> {
           habitsCheck.add(true);
         } else {
           habitsCheck.add(false);
+        }
+        if (habitsCheck.contains(false) == false) {
+          previouslyMarked = true;
         }
         (context as Element).reassemble();
       }
@@ -231,8 +247,11 @@ class TaskCheckListState extends State<TaskCheckList> {
     }
     final directory = await getApplicationDocumentsDirectory();
     final file = File('${directory.path}/my_file.txt');
-    await file.writeAsString(listMonths.toString() + "çç");
-    await file.writeAsString(listDays.toString() + "çç", mode: FileMode.append);
+    await file.writeAsString(_years.toString() + "çç");
+    await file.writeAsString(_months.toString() + "çç", mode: FileMode.append);
+    await file.writeAsString(_days.toString() + "çç", mode: FileMode.append);
+    await file.writeAsString(numOfHabits.toString() + "çç",
+        mode: FileMode.append);
     await file.writeAsString(listHaCheck.toString() + "çç",
         mode: FileMode.append);
     await file.writeAsString(habits, mode: FileMode.append);
@@ -240,11 +259,13 @@ class TaskCheckListState extends State<TaskCheckList> {
 }
 
 List<int> _stringToInt(String string) {
-  var slimpa = string.substring(1, string.length - 1);
-  var lista = slimpa.split(",");
-  List<int> retornar = <int>[];
-  for (var element in lista) {
-    retornar.add(int.parse(element));
+  if (string == "[]") {
+    return <int>[];
   }
-  return retornar;
+  var formatedStrings = string.substring(1, string.length - 1).split(",");
+  List<int> stringAsIntList = <int>[];
+  for (var element in formatedStrings) {
+    stringAsIntList.add(int.parse(element));
+  }
+  return stringAsIntList;
 }
