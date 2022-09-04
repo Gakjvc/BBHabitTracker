@@ -23,12 +23,12 @@ class TaskCheckListState extends State<TaskCheckList> {
   int numOfHabits = 6;
   bool editable = false;
   bool previouslyMarked = false;
-  String habits = "çç";
+  String habitsNames = "çç";
   bool notFirst = false;
-  List<String> habitsSeparated = <String>[];
+  List<String> habitsNamesSeparated = <String>[];
   List<TextEditingController> textControllers = <TextEditingController>[];
-  List<bool> habitsCheck = <bool>[];
-  List<int> listHaCheck = <int>[];
+  List<bool> habitsIsMarked = <bool>[];
+  List<int> HabitsAsInt = <int>[];
   List<int> _days = <int>[];
   List<int> _months = <int>[];
   List<int> _years = <int>[];
@@ -60,7 +60,7 @@ class TaskCheckListState extends State<TaskCheckList> {
         onPressed: () {
           setState(() {
             if (numOfHabits > 0) numOfHabits--;
-            habitsCheck.removeLast();
+            habitsIsMarked.removeLast();
             _markDay();
           });
         },
@@ -77,11 +77,11 @@ class TaskCheckListState extends State<TaskCheckList> {
   }
 
   Widget _buildRow(int indx) {
-    if (habitsCheck.length < numOfHabits) {
+    if (habitsIsMarked.length < numOfHabits) {
       bool checked = false;
-      habitsCheck.add(checked);
+      habitsIsMarked.add(checked);
       textControllers.add(TextEditingController());
-      habitsSeparated.add(textControllers[indx].text);
+      habitsNamesSeparated.add(textControllers[indx].text);
     }
 
     return CheckboxListTile(
@@ -91,14 +91,14 @@ class TaskCheckListState extends State<TaskCheckList> {
           controller: textControllers[indx],
           textInputAction: TextInputAction.done,
           onTap: () {
-            habitsSeparated[indx] = (textControllers[indx].text);
+            habitsNamesSeparated[indx] = (textControllers[indx].text);
           },
           onChanged: (change) {
-            habitsSeparated[indx] = change;
+            habitsNamesSeparated[indx] = change;
           },
           onEditingComplete: () {
             FocusScope.of(context).unfocus();
-            habitsSeparated[indx] = (textControllers[indx].text);
+            habitsNamesSeparated[indx] = (textControllers[indx].text);
           },
           maxLines: null,
           decoration: const InputDecoration(
@@ -106,17 +106,17 @@ class TaskCheckListState extends State<TaskCheckList> {
           ),
           enabled: editable,
         ),
-        value: habitsCheck[indx],
+        value: habitsIsMarked[indx],
         onChanged: (value) {
           setState(() {
-            habitsCheck[indx] = value!;
+            habitsIsMarked[indx] = value!;
             _markDay();
           });
         });
   }
 
   void _markDay() {
-    if (habitsCheck.contains(false) == false) {
+    if (habitsIsMarked.contains(false) == false) {
       _days.add(DateTime.now().day);
       _months.add(DateTime.now().month);
       _years.add(DateTime.now().year);
@@ -133,7 +133,7 @@ class TaskCheckListState extends State<TaskCheckList> {
     _markDay();
     _save();
     previouslyMarked = false;
-    for (var item in habitsCheck) {
+    for (var item in habitsIsMarked) {
       item = false;
     }
   }
@@ -201,22 +201,22 @@ class TaskCheckListState extends State<TaskCheckList> {
       _months = _stringToInt(savedSplitData[1]);
       _days = _stringToInt(savedSplitData[2]);
       numOfHabits = int.parse(savedSplitData[3]);
-      listHaCheck = _stringToInt(savedSplitData[4]);
-      habits = savedSplitData[5];
-      habitsSeparated = habits.split("|");
-      for (var item in habitsSeparated) {
+      HabitsAsInt = _stringToInt(savedSplitData[4]);
+      habitsNames = savedSplitData[5];
+      habitsNamesSeparated = habitsNames.split("|");
+      for (var item in habitsNamesSeparated) {
         if (item != "") {
-          textControllers[habitsSeparated.indexOf(item)].text = item;
+          textControllers[habitsNamesSeparated.indexOf(item)].text = item;
         }
       }
-      habitsCheck.clear();
-      for (var item in listHaCheck) {
+      habitsIsMarked.clear();
+      for (var item in HabitsAsInt) {
         if (item == 1) {
-          habitsCheck.add(true);
+          habitsIsMarked.add(true);
         } else {
-          habitsCheck.add(false);
+          habitsIsMarked.add(false);
         }
-        if (habitsCheck.contains(false) == false) {
+        if (habitsIsMarked.contains(false) == false) {
           previouslyMarked = true;
         }
         (context as Element).reassemble();
@@ -228,21 +228,21 @@ class TaskCheckListState extends State<TaskCheckList> {
 
   _save() async {
     notFirst = false;
-    habits = "çç";
-    listHaCheck.clear();
-    for (var item in habitsCheck) {
+    habitsNames = "çç";
+    HabitsAsInt.clear();
+    for (var item in habitsIsMarked) {
       if (item == true) {
-        listHaCheck.add(1);
+        HabitsAsInt.add(1);
       } else {
-        listHaCheck.add(0);
+        HabitsAsInt.add(0);
       }
     }
-    for (var item in habitsSeparated) {
-      if (habitsSeparated.indexOf(item) == 0 && !notFirst) {
-        habits = item;
+    for (var item in habitsNamesSeparated) {
+      if (habitsNamesSeparated.indexOf(item) == 0 && !notFirst) {
+        habitsNames = item;
         notFirst = true;
       } else {
-        habits = habits + "|" + item;
+        habitsNames = habitsNames + "|" + item;
       }
     }
     final directory = await getApplicationDocumentsDirectory();
@@ -252,9 +252,9 @@ class TaskCheckListState extends State<TaskCheckList> {
     await file.writeAsString(_days.toString() + "çç", mode: FileMode.append);
     await file.writeAsString(numOfHabits.toString() + "çç",
         mode: FileMode.append);
-    await file.writeAsString(listHaCheck.toString() + "çç",
+    await file.writeAsString(HabitsAsInt.toString() + "çç",
         mode: FileMode.append);
-    await file.writeAsString(habits, mode: FileMode.append);
+    await file.writeAsString(habitsNames, mode: FileMode.append);
   }
 }
 
